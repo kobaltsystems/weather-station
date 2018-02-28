@@ -7,10 +7,9 @@
 #include <SD.h> //SD Card
 
 // Losant credentials.
-const char* LOSANT_DEVICE_ID = "5a83ad48ba2caf00072fb396";
-const char* LOSANT_ACCESS_KEY = "b1754235-c104-468d-9518-8bc3ea637747";
-const char* LOSANT_ACCESS_SECRET = "c6725a90de6b0cc65c46836cdb44c60c456820b333d8f6256c58a298d8a4aa0a";
-
+const char* LOSANT_DEVICE_ID = "5a9374d64d3280000637e563";
+const char* LOSANT_ACCESS_KEY = "a9e6aaa8-2474-4cc6-a357-d0f46d5788b1";
+const char* LOSANT_ACCESS_SECRET = "5e1811fd8dfa44e3102ccab835de12142392852034161828a125b0bb76b92e8f";
 
 // Create an instance of a Losant device.
 LosantDevice device(LOSANT_DEVICE_ID);
@@ -27,6 +26,7 @@ dht11 DHT11;
 const int WAIT_TIME = 5 * 1000;
 int status;
 int failedConnectionAttempCounter;
+
 
 void setup()
 {
@@ -45,6 +45,11 @@ delay(500);
     while (1);
   }
   Serial.println("initialization done.");
+delay(500);
+
+  // Register the command handler to be called when a command is received from the Losant platform.
+  device.onCommand(&handleCommand);
+
 delay(500);
 
 //start ethernet and grab IP from network
@@ -82,6 +87,20 @@ if (Ethernet.begin(mac) == 0) {
 void loop()
 {
 
+bool toReconnect = false;
+
+
+  if(!device.connected()) {
+    Serial.println("Disconnected from Losant");
+    toReconnect = true;
+  }
+
+  if(toReconnect) {
+    connectToInternet();
+  }
+
+  device.loop();  
+
   //DHT11 diagnostics
 Serial.println("\n");
 int dht11ReadingStatus = DHT11.read(DHT11PIN);
@@ -104,29 +123,10 @@ break;
 
 // call voids 
 //ReportToLCD(DHT11.temperature, DHT11.humidity);
-WriteToSD(DHT11.temperature, DHT11.humidity);
 ReportToSerialOut(DHT11.temperature, DHT11.humidity);
 ReportToLosant(DHT11.temperature, DHT11.humidity);
 
 delay(WAIT_TIME);
-}
-
-//send temp data to SD card
-void WriteToSD(int temperature, int humidity){
-   
-   myFile = SD.open("test.txt", FILE_WRITE);
-  if (myFile) {    
-    myFile.print(temperature);
-    myFile.print(",");    
-    myFile.print(temperature);
-    myFile.print(",");    
-    myFile.println(humidity);
-    myFile.close(); // close the file
-  }
-  // if the file didn't open, print an error:
-  else {
-    Serial.println("error opening test.txt");
-  }
 }
 
 // send temp data to serial
@@ -148,31 +148,37 @@ void ReportToLosant(int temperature, int humidity)
     state["humidity"] = humidity;
     // Report the state to Losant.
     device.sendState(state);
-}
+    }
 
-void doStuff() {
-// Toggles and LED on or off.
-  Serial.println("Doing stuff like turning on an LED.");
-  ledState = !ledState;
-  digitalWrite(LED_PIN, ledState ? HIGH : LOW);
-}
 
 // Called whenever the device receives a command from the Losant platform.
 void handleCommand(LosantCommand *command) {
   
-  // { "foo" : 10 }
   JsonObject& payload = *command->payload;
-    String stringOne = payload["timeStamp"]; 
-
+    String timeStamp = payload["timeStamp"]; 
+    float temperature = payload["temperature"];
+    float humidity = payload["humidity"];
+  
   payload.printTo(Serial); // print the entire payload
   
   Serial.print(" Command received: ");
   Serial.println(command->name);
-  Serial.print("Command payload: ");
-  Serial.println(stringOne);
-  
-  
+  //writes JSON values to SD
   if(strcmp(command->name, "doStuff") == 0) {
-    doStuff();
+       myFile = SD.open("test.txt", FILE_WRITE);
+  if (myFile) {    
+    myFile.print(timeStamp);
+    myFile.print(",");    
+    myFile.print(temperature);
+    myFile.print(",");    
+    myFile.println(humidity);
+    myFile.close(); // close the file
+  }
+  // if the file didn't open, print an error:
+  else {
+    Serial.println("error opening test.txt");
   }
 }
+  
+}
+
