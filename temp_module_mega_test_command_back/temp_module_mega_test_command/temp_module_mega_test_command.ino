@@ -1,3 +1,5 @@
+// switch out for prototype header. Use proto_layout_v1.fzz
+
 #include <PubSubClient.h>
 #include <Ethernet.h>
 #include <EthernetClient.h>
@@ -15,13 +17,13 @@ LosantDevice device(LOSANT_DEVICE_ID);
 // create an ethernet instance
 EthernetClient EthClient;
 
+//PIN setup stuff
 const int BUTTON_PIN = 7;
 const int LED_PIN = 8;
-
 bool ledState = false;
 
-// Toggles and LED on or off.
 void doStuff() {
+// Toggles and LED on or off.
   Serial.println("Doing stuff like turning on an LED.");
   ledState = !ledState;
   digitalWrite(LED_PIN, ledState ? HIGH : LOW);

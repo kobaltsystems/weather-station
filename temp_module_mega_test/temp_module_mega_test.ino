@@ -150,8 +150,6 @@ void ReportToLosant(int temperature, int humidity)
     device.sendState(state);
 }
 
-
-
 void doStuff() {
 // Toggles and LED on or off.
   Serial.println("Doing stuff like turning on an LED.");
