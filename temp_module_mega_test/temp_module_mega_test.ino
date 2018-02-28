@@ -149,3 +149,32 @@ void ReportToLosant(int temperature, int humidity)
     // Report the state to Losant.
     device.sendState(state);
 }
+
+
+
+void doStuff() {
+// Toggles and LED on or off.
+  Serial.println("Doing stuff like turning on an LED.");
+  ledState = !ledState;
+  digitalWrite(LED_PIN, ledState ? HIGH : LOW);
+}
+
+// Called whenever the device receives a command from the Losant platform.
+void handleCommand(LosantCommand *command) {
+  
+  // { "foo" : 10 }
+  JsonObject& payload = *command->payload;
+    String stringOne = payload["timeStamp"]; 
+
+  payload.printTo(Serial); // print the entire payload
+  
+  Serial.print(" Command received: ");
+  Serial.println(command->name);
+  Serial.print("Command payload: ");
+  Serial.println(stringOne);
+  
+  
+  if(strcmp(command->name, "doStuff") == 0) {
+    doStuff();
+  }
+}
